@@ -248,11 +248,22 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
         <xsl:with-param name="c:review" tunnel="yes" select="true()"/>
       </xsl:call-template>
     </xsl:for-each>
-  
+
+    <!--Check tiling directive for presence of a file-->
+    <xsl:for-each select="key('c:assemble','__all__',$c:top)">
+      <xsl:variable name="c:rawTokens"
+                    select="tokenize(normalize-space(@inkscape:label),'\s+')"/>
+      <xsl:if test="$c:rawTokens[2]='=#'">
+        <xsl:value-of select="
+  concat('Collage directive missing template reference ''', $c:rawTokens[1])"/>
+      </xsl:if>
+    </xsl:for-each>
+    
     <!--check anything close to burn size that isn't expressly cut colour-->
     <xsl:variable name="c:checkStrokes"
                   select="(//*[contains(@style,'stroke-width')]
-                              [not(contains(@style,'stroke:none'))]) except (//defs//*)"/>
+                              [not(contains(@style,'stroke:none'))])
+                          except (//defs//*)"/>
     <xsl:for-each select="$c:checkStrokes">
       <xsl:variable name="c:strokeColour"
           select="if( contains( @style, 'stroke:#' ) )
@@ -347,12 +358,13 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
   <xsl:for-each select="$c:output">
     <xsl:variable name="c:thisAssembly" select="."/>
     <!--determine (and assume) umique identifier for each-->
+    <xsl:variable name="c:rawTokens" select="tokenize(@inkscape:label,'\s+')"/>
+    <xsl:variable name="c:id" select="$c:rawTokens[1]"/>
+    <xsl:variable name="c:directive" select="$c:rawTokens[2]"/>
     <xsl:variable name="c:tokens" 
-               select="c:disambiguateTokens(tokenize(@inkscape:label,'\s+'))"/>
+                  select="c:disambiguateTokens($c:rawTokens)"/>
     <!--act on the disambiguated references; initial tokens should be same-->
-    <xsl:variable name="c:id" select="$c:tokens[1]"/>
     <xsl:variable name="c:path" select="c:getPath(.)"/>
-    <xsl:variable name="c:directive" select="$c:tokens[2]"/>
     <!--create the SVG file for the target layer-->
     <xsl:result-document href="{$path2svg}{$c:path}{$c:id}{$name-suffix}.svg"
                          method="xml" indent="no">
@@ -389,14 +401,12 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
       <xsl:text>;object-to-path;select-clear;
 </xsl:text>
       <xsl:choose>
-        <xsl:when test="$c:directive='=#'"><!--this is a collage-->
-          <xsl:for-each select="$c:tokens[starts-with(.,'#')]">
-<xsl:text/>select-by-id:<xsl:value-of select="replace(.,'^#?(.+?)$','$1')"
-                                         />;page-fit-to-selection;select-clear;  
+        <xsl:when test="starts-with($c:directive,'=#')"><!--a collage-->
+          <xsl:for-each select="substring-after($c:directive,'#')">
+<xsl:text/>select-by-id:<xsl:value-of select="." />;page-fit-to-selection;select-clear;  
 <xsl:text/>
           </xsl:for-each>
-          <xsl:for-each select="$c:tokens[position()>2 and
-                                          not(starts-with(.,'#'))]">
+          <xsl:for-each select="$c:tokens[position()>2]">
             <xsl:variable name="c:rotation"
            select="if( position() mod 2 = 0 ) then 'ccw;' else 'cw;'"/>
             <xsl:variable name="c:horizontal"
@@ -404,7 +414,7 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
                                               else 'object-align:left page;'"/>
             <xsl:variable name="c:vertical"
            select="if( position() = ( 1,2 ) ) then 'object-align:top page;'
-              else if( position() > last()-2 ) then 'object-align:bottom page;'
+              else if( position() = last() ) then 'object-align:bottom page;'
               else 'object-align:vcenter page;'"/>
 <xsl:text/>select-by-id:<xsl:value-of select="
     concat(replace(.,'^#?(.+?):.*$','$1'),
@@ -545,7 +555,7 @@ inkscape "<xsl:value-of select='concat($path2svg,$c:path,$c:id,$name-suffix,
   <xsl:variable name="c:labelTokens" 
       select="c:disambiguateTokens(tokenize($c:layer/@inkscape:label,'\s+'))"/>
   <!--the output layer uses the given name-->
-    <xsl:for-each select="reverse($c:labelTokens[position()>2])">
+    <xsl:for-each select="reverse($c:labelTokens[normalize-space(.)])">
       <!--tease out the authored reference before it was disambiguated-->
       <xsl:variable name="c:disambiguated"
                     select="replace(.,'^#','')"/>
@@ -642,9 +652,18 @@ inkscape "<xsl:value-of select='concat($path2svg,$c:path,$c:id,$name-suffix,
 <xsl:function name="c:disambiguateTokens" as="xsd:string*">
   <xsl:param name="c:inputs" as="xsd:string*"/>
   
-  <xsl:for-each select="$c:inputs">
+  <xsl:for-each select="$c:inputs[normalize-space(.)]">
     <xsl:variable name="c:disambiguatePosition" select="position()"/>
     <xsl:choose>
+      <xsl:when test="position()=1">
+        <xsl:sequence select="''"/>
+      </xsl:when>
+      <xsl:when test="starts-with(.,'=#')">
+        <xsl:sequence select="substring-after(.,'#')"/>
+      </xsl:when>
+      <xsl:when test="starts-with(.,'=')">
+        <xsl:sequence select="''"/>
+      </xsl:when>
       <xsl:when test=". = $c:inputs[position() &lt; $c:disambiguatePosition]">
         <!--this is a duplicate, so disambiguate-->
         <xsl:sequence select="concat(.,'____',
