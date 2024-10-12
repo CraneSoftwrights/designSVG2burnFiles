@@ -161,10 +161,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                  [tokenize(@inkscape:label,'\s+')[starts-with(.,'=')]]"/>
 
 <xs:key>
-  <para>Find all objects based on their label</para>
+  <para>Find all objects based on their Inkscape label</para>
 </xs:key>
 <xsl:key name="c:objectsByLabel" match="*[@inkscape:label]"
          use="normalize-space(@inkscape:label)"/>
+
+<xs:key>
+  <para>Find all objects based on their pre-colon reference identifier</para>
+</xs:key>
+<xsl:key name="c:objectsByReference"
+         match="*[tokenize(normalize-space(@inkscape:label),'\s')[1]
+                  [contains(.,':')]]"
+       use="'__all__',substring-before(normalize-space(@inkscape:label),':')"/>
 
 <xs:key>
   <para>All ids</para>
@@ -248,14 +256,31 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
         <xsl:with-param name="c:review" tunnel="yes" select="true()"/>
       </xsl:call-template>
     </xsl:for-each>
+    
+    <!--any layer that is referenced has to have an id= identifier-->
+    <xsl:for-each select="key('c:objectsByReference','__all__')">
+      <xsl:if test="not(@id)">
+        <xsl:value-of select="concat('Missing id attribute for referenced ''',
+                                    tokenize(@inkscape:label,'\s+')[1],'''')"/>
+      </xsl:if>
+    </xsl:for-each>
 
     <!--Check tiling directive for presence of a file-->
     <xsl:for-each select="key('c:assemble','__all__',$c:top)">
       <xsl:variable name="c:rawTokens"
                     select="tokenize(normalize-space(@inkscape:label),'\s+')"/>
-      <xsl:if test="$c:rawTokens[2]='=#'">
-        <xsl:value-of select="
-  concat('Collage directive missing template reference ''', $c:rawTokens[1])"/>
+      <xsl:if test="starts-with($c:rawTokens[2],'=#')">
+        <xsl:variable name="c:tilingReference" 
+                      select="substring-after($c:rawTokens[2],'#')"/>
+        <xsl:if test="$c:tilingReference=''">
+          <xsl:value-of select="
+  concat('Collage directive missing tiling reference ''', $c:rawTokens[1])"/>
+        </xsl:if>
+        <xsl:if test="
+                   not(key('c:objectsByReference',$c:tilingReference,$c:top))">
+          <xsl:value-of select="
+               concat('Missing tiling reference ''',$c:tilingReference,'''')"/>
+        </xsl:if>
       </xsl:if>
     </xsl:for-each>
     
@@ -403,7 +428,8 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
       <xsl:choose>
         <xsl:when test="starts-with($c:directive,'=#')"><!--a collage-->
           <xsl:for-each select="substring-after($c:directive,'#')">
-<xsl:text/>select-by-id:<xsl:value-of select="." />;page-fit-to-selection;select-clear;  
+<xsl:text/>select-by-id:<xsl:value-of select="
+key('c:objectsByReference',.,$c:top)/@id"/>;page-fit-to-selection;select-clear;
 <xsl:text/>
           </xsl:for-each>
           <xsl:for-each select="$c:tokens[position()>2]">
@@ -417,7 +443,7 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
               else if( position() > last()-2) then 'object-align:bottom page;'
               else 'object-align:vcenter page;'"/>
 <xsl:text/>select-by-id:<xsl:value-of select="
-    concat(replace(.,'^#?(.+?):.*$','$1'),
+  concat(key('c:objectsByReference',replace(.,'^#?(.+?):.*$','$1'),$c:top)/@id,
     ';object-rotate-90-',$c:rotation,$c:vertical,$c:horizontal)"/>select-clear;
 <xsl:text/>
           </xsl:for-each>
@@ -433,7 +459,7 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
         </xsl:when>
         <xsl:when test="$c:directive='=&lt;'">
 <xsl:text/>select-by-id:<xsl:value-of
-       select="$c:id"/>;object-rotate-90-ccw;page-fit-to-selectio'n;select-clear;
+       select="$c:id"/>;object-rotate-90-ccw;page-fit-to-selection;select-clear;
 <xsl:text/>
         </xsl:when>
         <xsl:when test="$c:directive=('=v','=V')">
