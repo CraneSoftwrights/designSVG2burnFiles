@@ -100,7 +100,8 @@ jobs:
           # Define the release version using UTC in the format CCMMYYDD-HHMMZ
           echo "RELEASE_VERSION=$(date -u +'%C%y%m%d-%H%MZ')" >> $GITHUB_ENV
           echo "BRANCH_NAME=${GITHUB_REF##*/}" >> $GITHUB_ENV
-          echo "COMMIT_HASH_SHORT=$(echo ${{ github.sha }} | cut -c1-8)" >> $GITHUB_ENV
+          LATEST_COMMIT_HASH_SHORT=$(git rev-parse --short=8 HEAD)
+          echo "COMMIT_HASH_SHORT=$LATEST_COMMIT_HASH_SHORT" >> $GITHUB_ENV
                     
       - name: Annotate message log on success
         if: success()  # Had there been a failure, the log already is annotated
