@@ -167,14 +167,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
          use="normalize-space(@inkscape:label)"/>
 
 <xs:key>
-  <para>Find all objects based on their pre-colon reference identifier</para>
-</xs:key>
-<xsl:key name="c:objectsByReference"
-         match="*[tokenize(normalize-space(@inkscape:label),'\s')[1]
-                  [contains(.,':')]]"
-       use="'__all__',substring-before(normalize-space(@inkscape:label),':')"/>
-
-<xs:key>
   <para>All ids</para>
 </xs:key>
 <xsl:key name="c:objectsById" match="*[@id]" use="normalize-space(@id)"/>
@@ -257,14 +249,6 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
       </xsl:call-template>
     </xsl:for-each>
     
-    <!--any layer that is referenced has to have an id= identifier-->
-    <xsl:for-each select="key('c:objectsByReference','__all__')">
-      <xsl:if test="not(@id)">
-        <xsl:value-of select="concat('Missing id attribute for referenced ''',
-                                    tokenize(@inkscape:label,'\s+')[1],'''')"/>
-      </xsl:if>
-    </xsl:for-each>
-
     <!--Check tiling directive for presence of a file-->
     <xsl:for-each select="key('c:assemble','__all__',$c:top)">
       <xsl:variable name="c:rawTokens"
@@ -275,11 +259,6 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
         <xsl:if test="$c:tilingReference=''">
           <xsl:value-of select="
   concat('Collage directive missing tiling reference ''', $c:rawTokens[1])"/>
-        </xsl:if>
-        <xsl:if test="
-                   not(key('c:objectsByReference',$c:tilingReference,$c:top))">
-          <xsl:value-of select="
-               concat('Missing tiling reference ''',$c:tilingReference,'''')"/>
         </xsl:if>
       </xsl:if>
     </xsl:for-each>
@@ -428,8 +407,8 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
       <xsl:choose>
         <xsl:when test="starts-with($c:directive,'=#')"><!--a collage-->
           <xsl:for-each select="substring-after($c:directive,'#')">
-<xsl:text/>select-by-id:<xsl:value-of select="
-key('c:objectsByReference',.,$c:top)/@id"/>;page-fit-to-selection;select-clear;
+<xsl:text/>select-by-id:<xsl:value-of select="."
+/>;page-fit-to-selection;select-clear;
 <xsl:text/>
           </xsl:for-each>
           <xsl:for-each select="$c:tokens[position()>2]">
@@ -442,8 +421,8 @@ key('c:objectsByReference',.,$c:top)/@id"/>;page-fit-to-selection;select-clear;
            select="if( position() = ( 1,2 ) ) then 'object-align:top page;'
               else if( position() > last()-2) then 'object-align:bottom page;'
               else 'object-align:vcenter page;'"/>
-<xsl:text/>select-by-id:<xsl:value-of select="
-  concat(key('c:objectsByReference',replace(.,'^#?(.+?):.*$','$1'),$c:top)/@id,
+<xsl:text/>select-by-id:<xsl:value-of
+                                 select="concat(replace(.,'^#?(.+?):.*$','$1'),
     ';object-rotate-90-',$c:rotation,$c:vertical,$c:horizontal)"/>select-clear;
 <xsl:text/>
           </xsl:for-each>
@@ -638,7 +617,8 @@ inkscape "<xsl:value-of select='concat($path2svg,$c:path,$c:id,$name-suffix,
   <xsl:variable name="c:labelTokens" 
       select="c:disambiguateTokens(tokenize($c:layer/@inkscape:label,'\s+'))"/>
   <!--the output layer uses the given name-->
-    <xsl:for-each select="reverse($c:labelTokens[position()>2])">
+    <xsl:for-each select="
+                    reverse($c:labelTokens[position()>1][normalize-space(.)])">
       <!--tease out the authored reference before it was disambiguated-->
       <xsl:variable name="c:disambiguated"
                     select="replace(.,'^#','')"/>
