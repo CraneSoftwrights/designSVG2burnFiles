@@ -104,7 +104,7 @@ jobs:
                     
       - name: Annotate message log on success
         if: success()  # Had there been a failure, the log already is annotated
-        run |
+        run: |
             echo Branch:   $BRANCH_NAME >>makedoc.log.txt
             echo Commit:   $COMMIT_HASH_SHORT >>makedoc.log.txt
             echo Run date: $RELEASE_VERSION >>makedoc.log.txt
