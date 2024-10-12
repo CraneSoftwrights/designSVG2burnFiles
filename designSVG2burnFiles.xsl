@@ -414,7 +414,7 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
                                               else 'object-align:left page;'"/>
             <xsl:variable name="c:vertical"
            select="if( position() = ( 1,2 ) ) then 'object-align:top page;'
-              else if( position() = last() ) then 'object-align:bottom page;'
+              else if( position() > last()-2) then 'object-align:bottom page;'
               else 'object-align:vcenter page;'"/>
 <xsl:text/>select-by-id:<xsl:value-of select="
     concat(replace(.,'^#?(.+?):.*$','$1'),
