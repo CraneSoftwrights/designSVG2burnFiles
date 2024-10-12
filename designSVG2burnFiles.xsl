@@ -64,9 +64,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   </para>
 </xs:doc>
   
-<xs:output>
+<xs:outputx>
   <para>The output is a script to be executed in the operating system</para>
-</xs:output>
+</xs:outputx>
 <xsl:output method="text"/>
   
 <xs:param>
