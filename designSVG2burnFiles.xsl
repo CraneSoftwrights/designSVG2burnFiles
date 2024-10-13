@@ -402,7 +402,7 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
                       href="{$path2svg}{$c:path}{$c:id}{$name-suffix}.svg.txt">
 <xsl:text/>select-by-id:<xsl:value-of 
                                   select="$c:id"/>
-      <xsl:text>;object-to-path;select-clear;
+      <xsl:text>;select-all all;object-to-path;select-clear;
 </xsl:text>
       <xsl:choose>
         <xsl:when test="starts-with($c:directive,'=#')"><!--a collage-->
