@@ -519,11 +519,11 @@ if [ ! -d "pdf/<xsl:value-of select="."/>" ]; then mkdir "pdf/<xsl:value-of
     select="translate(substring-after(@inkscape:label,$c:directory),'''','')"/>
     <xsl:variable name="c:content" select="replace($c:content,'^\s+','')"/>
     
-echo >svg/<xsl:value-of select="c:getPath(.)"/>README.txt '<xsl:value-of select="
+echo >svg/<xsl:value-of select="c:getPath(.)"/>README.md '<xsl:value-of select="
   $c:content"/>'
-echo >png/<xsl:value-of select="c:getPath(.)"/>README.txt '<xsl:value-of select="
+echo >png/<xsl:value-of select="c:getPath(.)"/>README.md '<xsl:value-of select="
   $c:content"/>'
-echo >pdf/<xsl:value-of select="c:getPath(.)"/>README.txt '<xsl:value-of select="
+echo >pdf/<xsl:value-of select="c:getPath(.)"/>README.md '<xsl:value-of select="
   $c:content"/>'
   </xsl:for-each>
   
