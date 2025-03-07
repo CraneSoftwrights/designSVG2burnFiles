@@ -287,6 +287,10 @@ matrix(-0.10215694,0.10215694,-0.10214641,-0.10214641,282.66397,204.85245)')"/>
                         div 100000"/>
       
       <xsl:choose>
+        <xsl:when test="matches(@style,'stroke:\s*none') or
+                        not(contains(@style,'stroke:'))">
+          <!--don't worry about the stroke being a cutting stroke-->
+        </xsl:when>
         <xsl:when test="not( $c:strokeWidthLength castable as xsd:double )">
           <xsl:value-of select="concat('Unexpected stroke specification ''',
                                        $c:strokeWidth,''' ',
